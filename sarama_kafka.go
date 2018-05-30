@@ -8,13 +8,8 @@ import (
 )
 
 var (
-	kAsyncProducer               sarama.AsyncProducer
-	kClient                      sarama.Client
-	kAsyncProducerMessagePending chan *sarama.ProducerMessage
-)
-
-const (
-	ASYNC_PENDING_LENGTH = 65535
+	kAsyncProducer sarama.AsyncProducer
+	kClient        sarama.Client
 )
 
 func Init(brokers []string) {
@@ -38,28 +33,11 @@ func Init(brokers []string) {
 	}
 
 	kClient = cli
-	kAsyncProducerMessagePending = make(chan *sarama.ProducerMessage, ASYNC_PENDING_LENGTH)
-
-	go asyncInput()
-}
-
-func asyncInput() {
-	for {
-		select {
-		case msg, ok := <-kAsyncProducerMessagePending:
-			if !ok {
-				log.Error("Fail to get pending message from chan")
-				return
-			}
-
-			kAsyncProducer.Input() <- msg
-		}
-	}
 }
 
 func enqueue(msg *sarama.ProducerMessage) {
 	select {
-	case kAsyncProducerMessagePending <- msg:
+	case kAsyncProducer.Input() <- msg:
 	default:
 		log.Warn("kafka asyncProducer chan is full")
 	}
