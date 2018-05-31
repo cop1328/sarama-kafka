@@ -36,11 +36,7 @@ func Init(brokers []string) {
 }
 
 func enqueue(msg *sarama.ProducerMessage) {
-	select {
-	case kAsyncProducer.Input() <- msg:
-	default:
-		log.Warn("kafka asyncProducer chan is full")
-	}
+	kAsyncProducer.Input() <- msg
 }
 
 func Submit(topic string, value interface{}) {
